@@ -1,0 +1,52 @@
+{
+  "_comment": "OctoTelegram plugin configuration template",
+  "_docs": "https://github.com/fabianonline/OctoPrint-Telegram",
+  "_instructions": "Copy values into OctoPrint Settings > Plugins > Telegram",
+
+  "token": "<YOUR_BOT_TOKEN_FROM_BOTFATHER>",
+
+  "users": {
+    "<YOUR_TELEGRAM_USER_ID>": {
+      "name": "Anton",
+      "active": true,
+      "allowed": true,
+      "send": {
+        "PrintStarted": true,
+        "PrintDone": true,
+        "PrintFailed": true,
+        "PrintCancelled": true,
+        "ZChange": true,
+        "notify_bed_temp": false
+      }
+    }
+  },
+
+  "notifications": {
+    "PrintStarted": {
+      "enabled": true,
+      "message": "Started printing {file}.",
+      "image": true
+    },
+    "PrintDone": {
+      "enabled": true,
+      "message": "Done printing {file}.\nPrint time: {time}",
+      "image": true
+    },
+    "PrintFailed": {
+      "enabled": true,
+      "message": "Print FAILED: {file}\nReason: {reason}",
+      "image": true
+    },
+    "ZChange": {
+      "enabled": true,
+      "message": "Printing at Z={z}.\nBed {bed_actual}/{bed_target}, Extruder {ext_actual}/{ext_target}.\n{elapsed}, {progress}% done, {remaining} remaining.\nCompleted time {eta}.",
+      "image": true,
+      "height_step": 5.0
+    }
+  },
+
+  "message_at_startup": false,
+  "message_at_shutdown": false,
+
+  "_note_find_user_id": "Send /user command to the bot to get your Telegram user ID"
+}

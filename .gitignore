@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.env
+
+# OctoPrint runtime data
+octoprint/.octoprint/
+*.log
+
+# Klipper runtime
+klipper/klippy.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Secrets
+*.secret
+config.local.yaml
+telegram_config_local.json

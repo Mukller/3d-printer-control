@@ -1,0 +1,46 @@
+# OctoPrint config.yaml example
+# Copy to ~/.octoprint/config.yaml and edit values marked with <CHANGE_ME>
+# Full docs: https://docs.octoprint.org/en/master/configuration/config_yaml.html
+
+api:
+  key: <CHANGE_ME_API_KEY>
+
+appearance:
+  name: "Ender 5 S1"
+  color: default
+
+server:
+  host: 0.0.0.0
+  port: 5000
+  firstRun: false
+
+webcam:
+  stream: /webcam/?action=stream
+  snapshot: /webcam/?action=snapshot
+  ffmpeg: /usr/bin/ffmpeg
+  bitrate: "5000k"
+  watermark: false
+  flipH: false
+  flipV: false
+
+temperature:
+  profiles:
+    - name: "PLA"
+      extruder: 210
+      bed: 60
+    - name: "PETG"
+      extruder: 235
+      bed: 85
+    - name: "ABS"
+      extruder: 240
+      bed: 100
+
+plugins:
+  _disabled: []
+
+serial:
+  baudrate: 115200
+  port: /dev/ttyUSB0   # Change to /dev/ttyACM0 if needed
+
+slicing:
+  defaultSlicer: null

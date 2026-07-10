@@ -1,0 +1,24 @@
+# OctoPrint Plugins
+# Install via: pip install <plugin_url>
+# Or use OctoPrint Plugin Manager UI
+
+# Main Telegram bot control
+https://github.com/fabianonline/OctoPrint-Telegram/archive/stable.zip
+
+# PSU Control via eWeLink / Sonoff
+https://github.com/airens/OctoPrint-PSUControl-eWeLink/archive/master.zip
+
+# AI print failure detection
+https://github.com/printpal-io/OctoPrint-PrintWatch/archive/main.zip
+
+# Accurate time estimation from slicer metadata
+https://github.com/NillerMedDild/Octoprint-SlicerEstimator/archive/master.zip
+
+# UI customization (dark theme, layout)
+https://github.com/LazeMSS/OctoPrint-UICustomizer/archive/main.zip
+
+# Bit-Bang SPI GPIO
+https://github.com/RoboMagus/OctoPrint-Bit-Bang/archive/main.zip
+
+# OctoEverywhere - remote access (install from plugin manager, requires account)
+# https://plugins.octoprint.org/plugins/octoeverywhere/
