@@ -66,6 +66,12 @@ This repository contains configs, scripts, and documentation for setting up and 
 
 ---
 
+## 🌐 Online-Slicer (web module)
+
+The [`online-slicer/`](online-slicer/) subfolder contains a separate web module — an online platform for viewing and slicing 3D models (STL) right in the browser: Node.js/Express backend + React/Three.js frontend + a standalone print app. Full docs in [online-slicer/README.md](online-slicer/README_EN.md).
+
+---
+
 ## 🚀 Quick Start
 
 **1. Flash Raspberry Pi OS Lite to SD card**
