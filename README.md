@@ -6,14 +6,20 @@
 
 # 3D Printer Control 🖨️
 
-**Полный стек управления 3D-принтером: OctoPrint + Klipper + Telegram-бот + сборка образа для Raspberry Pi**
-
-Этот репозиторий содержит конфиги, скрипты и документацию для восстановления и поддержания работоспособности домашней системы управления 3D-принтером на базе Raspberry Pi. Принтер — **Creality Ender 5 S1**.
+<p align="center">
+  <a href="https://github.com/Mukller">
+    <img src="https://img.shields.io/badge/Anton%20Petnitsky-Developer-0d1117?style=for-the-badge&logo=github&logoColor=white&labelColor=0d1117&color=58a6ff" alt="Anton Petnitsky" />
+  </a>
+</p>
 
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-red)
 ![OctoPrint](https://img.shields.io/badge/OctoPrint-1.9+-orange)
+
+**Полный стек управления 3D-принтером: OctoPrint + Klipper + Telegram-бот + сборка образа для Raspberry Pi**
+
+Этот репозиторий содержит конфиги, скрипты и документацию для восстановления и поддержания работоспособности домашней системы управления 3D-принтером на базе Raspberry Pi. Принтер — **Creality Ender 5 S1**.
 
 ---
 

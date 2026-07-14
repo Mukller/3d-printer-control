@@ -6,14 +6,20 @@
 
 # 3D Printer Control 🖨️
 
-**Full 3D printer management stack: OctoPrint + Klipper + Telegram bot + Raspberry Pi image builder**
-
-This repository contains configs, scripts, and documentation for setting up and maintaining a home 3D printer management system on Raspberry Pi. Printer: **Creality Ender 5 S1**.
+<p align="center">
+  <a href="https://github.com/Mukller">
+    <img src="https://img.shields.io/badge/Anton%20Petnitsky-Developer-0d1117?style=for-the-badge&logo=github&logoColor=white&labelColor=0d1117&color=58a6ff" alt="Anton Petnitsky" />
+  </a>
+</p>
 
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-red)
 ![OctoPrint](https://img.shields.io/badge/OctoPrint-1.9+-orange)
+
+**Full 3D printer management stack: OctoPrint + Klipper + Telegram bot + Raspberry Pi image builder**
+
+This repository contains configs, scripts, and documentation for setting up and maintaining a home 3D printer management system on Raspberry Pi. Printer: **Creality Ender 5 S1**.
 
 ---
 
