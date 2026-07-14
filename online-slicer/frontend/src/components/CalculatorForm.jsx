@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import STLViewer from "./STLViewer";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = import.meta.env.VITE_API_URL || "";
 
 const LAYER_OPTIONS = ["0.1", "0.15", "0.2", "0.3"];
 const INFILL_OPTIONS = ["10", "20", "30", "40", "50"];

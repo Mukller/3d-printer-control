@@ -1,7 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      '/upload': 'http://localhost:3001',
+      '/print': 'http://localhost:3001',
+      '/printer': 'http://localhost:3001',
+      '/uploads': 'http://localhost:3001',
+    },
+  },
 })
