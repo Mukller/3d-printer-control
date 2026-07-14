@@ -52,6 +52,7 @@ This documentation contains everything needed to set up the system from scratch.
 - [Power Control](#power-control)
 - [Calibrations](#calibrations)
   - [Print Defect Reference](#3d-print-defect-reference)
+- [Maintenance Scripts](#maintenance-scripts)
 - [Online Slicer](#online-slicer)
 - [Troubleshooting](#troubleshooting)
 
@@ -2162,6 +2163,59 @@ shaper_type_y: mzv
 | ABS CF/GF | 290°C | 110°C |
 
 > ⚠️ PTFE tube is limited to 250°C. For high-temperature materials, you need a full-metal hotend assembly.
+
+---
+
+## Maintenance Scripts
+
+The `scripts/` directory contains three scripts for regular system maintenance.
+
+### backup.sh — Backup
+
+Archives `printer.cfg`, OctoPrint config, and the installed plugins list. Keeps the last 7 backups.
+
+```bash
+# Local backup (saved to ~/backups/3dprinter/)
+bash scripts/backup.sh
+
+# Backup + send archive to Telegram
+TELEGRAM_TOKEN=xxx TELEGRAM_CHAT_ID=yyy bash scripts/backup.sh --tg
+```
+
+### update.sh — System Update
+
+Updates OctoPrint, all plugins, Klipper, and camera services in one command.
+
+```bash
+bash scripts/update.sh
+```
+
+### health_check.sh — Service Monitoring
+
+Checks: OctoPrint, Klipper, webcam, ADXL345 MCU, disk usage, RAM, CPU temperature.  
+Sends a Telegram alert if any issue is detected.
+
+```bash
+# One-off check
+bash scripts/health_check.sh
+
+# With Telegram alerts
+TELEGRAM_TOKEN=xxx TELEGRAM_CHAT_ID=yyy bash scripts/health_check.sh
+```
+
+**Auto-run via cron every 5 minutes:**
+
+```bash
+crontab -e
+```
+
+Add this line:
+
+```
+*/5 * * * * TELEGRAM_TOKEN=<token> TELEGRAM_CHAT_ID=<chat_id> /home/pi/3d-printer-control/scripts/health_check.sh >> /home/pi/health_check.log 2>&1
+```
+
+How to get `TELEGRAM_CHAT_ID`: send `/start` to your bot, then open `https://api.telegram.org/bot<TOKEN>/getUpdates` — the `chat.id` field in the response is your chat ID.
 
 ---
 

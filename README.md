@@ -53,6 +53,7 @@
 - [Калибровки](#калибровки)
   - [Input Shaper (ADXL345)](#input-shaper--adxl345-акселерометр)
   - [Справочник дефектов](#справочник-дефектов-3d-печати)
+- [Скрипты обслуживания](#скрипты-обслуживания)
 - [Онлайн-слайсер](#онлайн-слайсер)
 - [Troubleshooting](#troubleshooting)
 
@@ -2179,6 +2180,59 @@ shaper_type_y: mzv
 | ABS CF/GF | 290°C | 110°C |
 
 > ⚠️ PTFE трубка ограничена 250°C. Для высокотемпературных материалов нужна full-metal хотенд зона.
+
+---
+
+## Скрипты обслуживания
+
+В папке `scripts/` три скрипта для регулярного обслуживания системы.
+
+### backup.sh — Резервное копирование
+
+Архивирует `printer.cfg`, конфиг OctoPrint и список плагинов. Хранит последние 7 бэкапов.
+
+```bash
+# Локальный бэкап (в ~/backups/3dprinter/)
+bash scripts/backup.sh
+
+# Бэкап + отправка архива в Telegram
+TELEGRAM_TOKEN=xxx TELEGRAM_CHAT_ID=yyy bash scripts/backup.sh --tg
+```
+
+### update.sh — Обновление системы
+
+Обновляет OctoPrint, все плагины, Klipper и камеру одной командой.
+
+```bash
+bash scripts/update.sh
+```
+
+### health_check.sh — Мониторинг сервисов
+
+Проверяет: OctoPrint, Klipper, webcam, ADXL345 MCU, диск, RAM, CPU-температуру.  
+При проблемах — отправляет алерт в Telegram.
+
+```bash
+# Разовая проверка
+bash scripts/health_check.sh
+
+# С Telegram-алертами
+TELEGRAM_TOKEN=xxx TELEGRAM_CHAT_ID=yyy bash scripts/health_check.sh
+```
+
+**Автозапуск через cron каждые 5 минут:**
+
+```bash
+crontab -e
+```
+
+Добавить строку:
+
+```
+*/5 * * * * TELEGRAM_TOKEN=<token> TELEGRAM_CHAT_ID=<chat_id> /home/pi/3d-printer-control/scripts/health_check.sh >> /home/pi/health_check.log 2>&1
+```
+
+Где взять `TELEGRAM_CHAT_ID`: напиши боту `/start`, затем открой `https://api.telegram.org/bot<TOKEN>/getUpdates` — `chat.id` в ответе.
 
 ---
 
