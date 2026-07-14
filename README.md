@@ -22,6 +22,16 @@
 
 Эта документация содержит абсолютно всё необходимое для настройки системы с нуля. Никаких других инструкций не понадобится.
 
+<p align="center">
+  <img src="https://octoprint.org/assets/img/features/control-tab.png" width="48%" alt="OctoPrint Control" />
+  <img src="https://octoprint.org/assets/img/features/temperature-tab.png" width="48%" alt="OctoPrint Temperature" />
+</p>
+<p align="center">
+  <img src="https://github.com/jacopotediosi/OctoPrint-Telegram/raw/master/extras/images/screen_1.png" width="32%" alt="Telegram Bot" />
+  <img src="https://github.com/jacopotediosi/OctoPrint-Telegram/raw/master/extras/images/screen_2.png" width="32%" alt="Telegram Commands" />
+  <img src="https://octoprint.org/assets/img/features/timelapse-tab.png" width="32%" alt="OctoPrint Timelapse" />
+</p>
+
 ---
 
 ## Содержание
@@ -41,6 +51,7 @@
 - [Камера](#камера)
 - [Управление питанием](#управление-питанием)
 - [Калибровки](#калибровки)
+  - [Input Shaper (ADXL345)](#input-shaper--adxl345-акселерометр)
   - [Справочник дефектов](#справочник-дефектов-3d-печати)
 - [Онлайн-слайсер](#онлайн-слайсер)
 - [Troubleshooting](#troubleshooting)
@@ -1964,6 +1975,137 @@ TUNING_TOWER COMMAND=SET_PRESSURE_ADVANCE PARAMETER=ADVANCE START=0 FACTOR=.005
 # 8. Применить
 FIRMWARE_RESTART
 ```
+
+---
+
+### Input Shaper — ADXL345 акселерометр
+
+Input Shaper — компенсация резонансных вибраций принтера в реальном времени. Klipper измеряет частоту вибраций каждой оси и вычитает её при движении. Результат: **можно печатать значительно быстрее без «призраков»** (ringing) на углах. Для измерения нужен ADXL345 — дешёвый (≈$3) SPI-акселерометр.
+
+#### Схема подключения ADXL345 → Pi Zero 2 WH
+
+```
+ADXL345 Pin    →   RPi Pin    →   Название
+───────────────────────────────────────────
+VCC (3.3V)     →   Pin  1     →   3.3V DC
+GND            →   Pin  6     →   GND
+CS             →   Pin 24     →   GPIO8 (SPI0_CE0)
+SDO (MISO)     →   Pin 21     →   GPIO9 (SPI0_MISO)
+SDA (MOSI)     →   Pin 19     →   GPIO10 (SPI0_MOSI)
+SCL (SCLK)     →   Pin 23     →   GPIO11 (SPI0_SCLK)
+```
+
+> Используй короткие провода (≤20 см) или экранированную витую пару. Плохой контакт даст шум вместо графика резонансов.
+
+#### 1. Включи SPI на Pi
+
+```bash
+sudo raspi-config
+# Interface Options → SPI → Enable
+sudo reboot
+```
+
+Проверь:
+```bash
+ls /dev/spidev*
+# Должно появиться: /dev/spidev0.0
+```
+
+#### 2. Установи numpy
+
+```bash
+source ~/oprint/bin/activate
+pip install numpy
+deactivate
+
+# Для Klipper Host MCU (запускает Python на самом Pi как MCU)
+cd ~/klipper
+make menuconfig
+# Micro-controller Architecture → Linux process
+# → Q → Yes
+make
+sudo make flash
+sudo cp scripts/klipper-mcu.service /etc/systemd/system/
+sudo systemctl enable klipper-mcu
+sudo systemctl start klipper-mcu
+```
+
+#### 3. Добавь в printer.cfg
+
+```ini
+# Raspberry Pi как второй MCU (для ADXL345)
+[mcu rpi]
+serial: /tmp/klipper_host_mcu
+
+# ADXL345 акселерометр
+[adxl345]
+cs_pin: rpi:None        # Используем SPI0, CE0 (Pin 24)
+
+# Тестер резонансов
+[resonance_tester]
+accel_chip: adxl345
+probe_points:
+    110, 110, 20        # Центр стола, немного выше нуля
+```
+
+```bash
+# Применить конфиг
+FIRMWARE_RESTART
+```
+
+#### 4. Проверь что акселерометр работает
+
+В терминале OctoPrint:
+```
+ACCELEROMETER_QUERY
+```
+
+Ответ должен быть что-то вроде:
+```
+adxl345 values (x, y, z): 430.1, -30.5, 9808.4
+```
+Если ошибка — проверь провода и что SPI включён.
+
+#### 5. Запусти калибровку
+
+```
+SHAPER_CALIBRATE
+```
+
+Принтер сначала двигает X ось с нарастающей частотой, потом Y. Каждый замер занимает ~2 минуты. После завершения Klipper выдаст рекомендации:
+
+```
+Fitted shaper 'mzv' frequency = 38.2 Hz (vibrations = 1.2%, smoothing ~= 0.134)
+Fitted shaper 'ei' frequency = 47.4 Hz (vibrations = 0.5%, smoothing ~= 0.133)
+Recommended shaper is mzv @ 38.2 Hz
+```
+
+Сохрани результат:
+```
+SAVE_CONFIG
+```
+
+Klipper автоматически добавит в конец printer.cfg:
+```ini
+[input_shaper]
+shaper_freq_x: 38.2
+shaper_type_x: mzv
+shaper_freq_y: 41.7
+shaper_type_y: mzv
+```
+
+#### 6. Что означают типы шейперов
+
+| Тип | Характеристика |
+|-----|---------------|
+| `zv` | Простой, быстрый, для жёстких принтеров |
+| `mzv` | Модифицированный ZV — хорош для большинства |
+| `ei` | Больше сглаживает, для мягких рам |
+| `2hump_ei` / `3hump_ei` | Максимальное подавление, потеря скорости |
+
+После калибровки можно поднять `max_accel` в `[printer]` до значений, рекомендованных Klipper в отчёте.
+
+> **Ресурс:** [Klipper Input Shaper документация](https://www.klipper3d.org/Resonance_Compensation.html)
 
 ---
 

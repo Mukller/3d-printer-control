@@ -22,6 +22,16 @@
 
 This documentation contains everything needed to set up the system from scratch. No other instructions required.
 
+<p align="center">
+  <img src="https://octoprint.org/assets/img/features/control-tab.png" width="48%" alt="OctoPrint Control" />
+  <img src="https://octoprint.org/assets/img/features/temperature-tab.png" width="48%" alt="OctoPrint Temperature" />
+</p>
+<p align="center">
+  <img src="https://github.com/jacopotediosi/OctoPrint-Telegram/raw/master/extras/images/screen_1.png" width="32%" alt="Telegram Bot" />
+  <img src="https://github.com/jacopotediosi/OctoPrint-Telegram/raw/master/extras/images/screen_2.png" width="32%" alt="Telegram Commands" />
+  <img src="https://octoprint.org/assets/img/features/timelapse-tab.png" width="32%" alt="OctoPrint Timelapse" />
+</p>
+
 ---
 
 ## Table of Contents
@@ -1962,6 +1972,126 @@ TUNING_TOWER COMMAND=SET_PRESSURE_ADVANCE PARAMETER=ADVANCE START=0 FACTOR=.005
 # 8. Apply
 FIRMWARE_RESTART
 ```
+
+---
+
+### Input Shaper — ADXL345 Accelerometer
+
+Input Shaper is a Klipper feature that measures resonant frequencies of the printer and automatically compensates for them. The result: no more "ghosting" (ringing artifacts on corners) even at high print speeds (150+ mm/s).
+
+**Requires:** ADXL345 accelerometer (~$3) connected via SPI to Raspberry Pi.
+
+#### Wiring ADXL345 → Raspberry Pi Zero 2 WH
+
+| ADXL345 Pin | RPi Pin | Name              |
+|-------------|---------|-------------------|
+| VCC (3.3V)  | Pin 1   | 3.3V DC           |
+| GND         | Pin 6   | GND               |
+| CS          | Pin 24  | GPIO8 (SPI0_CE0)  |
+| SDO (MISO)  | Pin 21  | GPIO9 (SPI0_MISO) |
+| SDA (MOSI)  | Pin 19  | GPIO10 (SPI0_MOSI)|
+| SCL (SCLK)  | Pin 23  | GPIO11 (SPI0_SCLK)|
+
+![Raspberry Pi Zero 2 WH GPIO Pinout](https://pinout-ai.s3.eu-west-2.amazonaws.com/raspberry-pi-zero-2w.png)
+
+#### 1. Enable SPI
+
+```bash
+sudo raspi-config
+# Interface Options → SPI → Yes → Finish
+sudo reboot
+```
+
+#### 2. Install numpy and klipper_host_mcu
+
+```bash
+# numpy (required for resonance data processing)
+~/klippy-env/bin/pip install numpy
+
+# Compile and install klipper host MCU
+cd ~/klipper
+make menuconfig
+# Select: Linux process
+make
+sudo make install
+
+sudo systemctl enable klipper-mcu
+sudo systemctl start klipper-mcu
+```
+
+#### 3. Add to printer.cfg
+
+```ini
+[mcu rpi]
+serial: /tmp/klipper_host_mcu
+
+[adxl345]
+cs_pin: rpi:None
+
+[resonance_tester]
+accel_chip: adxl345
+probe_points:
+    110, 110, 20  # center of your bed
+```
+
+After editing: `FIRMWARE_RESTART`
+
+#### 4. Verify Connection
+
+In OctoPrint terminal or Mainsail:
+
+```
+ACCELEROMETER_QUERY
+```
+
+Expected output:
+```
+adxl345 values (x, y, z): 470.719200, 941.438400, 9728.095200
+```
+
+If you see values — the accelerometer is working correctly.
+
+#### 5. Run Calibration
+
+```
+SHAPER_CALIBRATE
+```
+
+The printer will tap X and Y axes in turn. Example output:
+
+```
+Fitted shaper 'zv' frequency = 34.4 Hz (vibrations = 4.0%, smoothing ~= 0.132)
+Fitted shaper 'mzv' frequency = 28.6 Hz (vibrations = 0.0%, smoothing ~= 0.170)
+Fitted shaper 'ei' frequency = 34.4 Hz (vibrations = 0.0%, smoothing ~= 0.191)
+Recommended shaper is mzv @ 28.6 Hz
+```
+
+Save the result:
+
+```
+SAVE_CONFIG
+```
+
+Klipper will automatically add to printer.cfg:
+
+```ini
+[input_shaper]
+shaper_freq_x: 28.6
+shaper_type_x: mzv
+shaper_freq_y: 34.2
+shaper_type_y: mzv
+```
+
+#### Shaper Types
+
+| Type     | Description                                     | Best for                              |
+|----------|-------------------------------------------------|---------------------------------------|
+| zv       | Zero Vibration — simplest, minimal smoothing    | Stiff frames, fast printers           |
+| mzv      | Modified ZV — good balance (recommended)        | Most printers                         |
+| ei       | Extra Insensitive — strong compensation         | High-resonance printers               |
+| 2hump_ei | Double hump — maximum compensation              | Very wobbly frames, Bed Slingers      |
+
+> After calibration you can safely increase speed to 150–200 mm/s in slicer without ringing artifacts.
 
 ---
 
