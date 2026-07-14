@@ -31,11 +31,17 @@ This documentation contains everything needed to set up the system from scratch.
 - [Installation](#installation)
 - [Klipper — Printer Configuration](#klipper--printer-configuration)
 - [OctoPrint Plugins](#octoprint-plugins)
+  - [OctoTelegram](#ocotelegram--telegram-printer-control)
+  - [PSU Control (GPIO relay)](#psu-control--printer-power-management)
+  - [OctoEverywhere](#octoeverywhere--remote-access--ai-defect-detection)
+  - [PrintWatch](#printwatch--alternative-ai-defect-detector)
+  - [Obico (open-source AI)](#obico--open-source-ai-detector-with-self-hosting)
 - [Telegram Bot](#telegram-bot)
 - [Bot Commands](#bot-commands)
 - [Camera](#camera)
 - [Power Control](#power-control)
 - [Calibrations](#calibrations)
+  - [Print Defect Reference](#3d-print-defect-reference)
 - [Online Slicer](#online-slicer)
 - [Troubleshooting](#troubleshooting)
 
@@ -1093,6 +1099,67 @@ sudo systemctl restart octoprint
 
 ---
 
+### Obico — Open-Source AI Detector with Self-Hosting
+
+**Repository:** https://github.com/TheSpaghettiDetective/obico-server  
+**OctoPrint plugin:** https://github.com/TheSpaghettiDetective/OctoPrint-Obico
+
+Obico (formerly The Spaghetti Detective) is the only fully open-source AI print failure detector. Licensed under AGPL v3. The algorithm has detected over 800,000 failed prints across the global community.
+
+**Key advantage:** When self-hosted, runs completely locally, free of charge, with unlimited printers and all Pro features at no subscription cost.
+
+**How it works:**
+
+Obico runs as a separate server (can run on the same Pi or another machine). The OctoPrint plugin connects to this server. The server receives camera frames every 30–60 seconds, runs them through the neural network, and when confidence exceeds the threshold over several consecutive frames — pauses or cancels the print.
+
+```
+Printer + camera → OctoPrint → Obico plugin → Obico server → AI model → Pause/Notify
+```
+
+**Deployment options:**
+
+| Option | Cost | Where AI runs |
+|--------|------|---------------|
+| Obico Cloud | Free 1 printer / $4/mo Pro | Obico's servers |
+| Self-hosted (recommended) | Free | Locally on your hardware |
+
+**Install Obico server (self-hosted):**
+
+```bash
+# On a separate machine (Pi 3B+/4, PC, VPS) with Docker
+cd ~
+git clone https://github.com/TheSpaghettiDetective/obico-server.git
+cd obico-server
+docker-compose up -d
+```
+
+Or keep OctoPrint+Klipper on your Pi and run the Obico server on a VPS or home PC.
+
+**Install OctoPrint plugin:**
+
+```bash
+source ~/oprint/bin/activate
+pip install https://github.com/TheSpaghettiDetective/OctoPrint-Obico/archive/master.zip
+deactivate
+sudo systemctl restart octoprint
+```
+
+**Connect to your server:**
+
+OctoPrint → Settings → Obico:
+- **Server address:** `http://your-server:3334`
+- Click **Link OctoPrint** — get a code
+- Enter the code in your Obico server → printer added
+- **AI Failure Detection:** enable, select **Pause on detection**
+- **Notification channels:** Telegram or email
+
+> **Obico vs OctoEverywhere vs PrintWatch:**  
+> — Obico self-hosted: free, local, open source — best choice if you have a second machine  
+> — OctoEverywhere Gadget: convenient, cloud, paid for multiple printers  
+> — PrintWatch: requires API key from their service, not fully offline
+
+---
+
 ### SlicerEstimator — Accurate Print Time
 
 **Repository:** https://github.com/NillerMedDild/Octoprint-SlicerEstimator
@@ -1564,6 +1631,10 @@ Connect the live wire (L) from wall outlet to COM, from NO to printer. When rela
 
 GPIO17 = Physical Pin 11 (BCM numbering).
 
+> Full 40-pin diagram:
+
+![Raspberry Pi Zero 2 WH GPIO Pinout](https://pinout-ai.s3.eu-west-2.amazonaws.com/raspberry-pi-zero-2w.png)
+
 **OctoPrint PSU Control configuration:**
 
 OctoPrint → Settings → PSU Control:
@@ -1900,6 +1971,67 @@ FIRMWARE_RESTART
 - **[Klipper Config Reference](https://www.klipper3d.org/Config_Reference.html)** — full documentation for all printer.cfg parameters
 - **[Klipper Pressure Advance](https://www.klipper3d.org/Pressure_Advance.html)** — detailed PA tuning guide
 - **[Klipper Input Shaper](https://www.klipper3d.org/Resonance_Compensation.html)** — vibration compensation setup (advanced)
+
+---
+
+### 3D Print Defect Reference
+
+> Source: [3dpt.ru FAQ](https://3dpt.ru/page/faq) — images show what each problem looks like on real printed parts.
+
+#### Print Start Issues
+
+| Defect | Photo | Causes | Fix |
+|--------|-------|--------|-----|
+| **Not extruding at start** | ![](https://static.insales-cdn.com/files/1/669/1712797/original/Not-Extruding-At-Start-200.jpg) | Filament not loaded, broken at entry, stuck nozzle | Check loading, clean nozzle, add skirt in slicer to prime before printing |
+| **Poor first layer adhesion** | ![](https://static.insales-cdn.com/files/1/681/1712809/original/400-Print-Not-Sticking-To-Bed.jpg) | Z-offset too high, cold bed, oily bed, wet filament | Calibrate Z-offset, clean bed with IPA, adjust bed temperature, dry filament |
+
+#### Extrusion Issues
+
+| Defect | Photo | Causes | Fix |
+|--------|-------|--------|-----|
+| **Under-extrusion** | ![](https://static.insales-cdn.com/files/1/682/1712810/original/400-Under-Extruding.jpg) | Wrong filament diameter in slicer, worn nozzle, weak drive gear tension | Measure real diameter with calipers, check nozzle, calibrate E-steps |
+| **Over-extrusion** | ![](https://static.insales-cdn.com/files/1/684/1712812/original/400-Over-Extruding-400.jpg) | Diameter set too small, partial clog | Correct diameter in slicer, inspect nozzle |
+| **Holes in top layers** | ![](https://static.insales-cdn.com/files/1/694/1712822/original/400-Holes-Or-Gaps-In-Top-Layers.jpg) | Too few solid top layers, low infill | Increase solid top layers (min 0.5 mm), raise infill to 30–50% |
+| **Stringing (hairs)** | ![](https://static.insales-cdn.com/files/1/695/1712823/original/400-Hairs-And-Stringing.jpg) | Material too fluid during travel moves | Enable retraction (1–2 mm direct, up to 6 mm bowden), lower temp 5–10°C, tune Pressure Advance |
+| **Stops mid-print** | ![](https://static.insales-cdn.com/files/1/1257/1713385/original/400-Stops-Extruding-Mid-Print.jpg) | Filament ran out, drive gear stripped, clog | Check spool, inspect drive for shavings, clean nozzle |
+| **Stripped filament** | ![](https://static.insales-cdn.com/files/1/1255/1713383/original/400-Grinding-Or-Stripped-Filament.jpg) | Extruder grinding the filament — too fast or clogged | Reduce speed 50%, clean nozzle, raise temp 5°C |
+| **Clogged extruder** | ![](https://static.insales-cdn.com/files/1/1256/1713384/original/400-Clogged-Extruder.jpg) | Burnt plastic, material change without cleaning, too low temp | Cold pull, cleaning needle, replace nozzle |
+
+#### Surface Quality Issues
+
+| Defect | Photo | Causes | Fix |
+|--------|-------|--------|-----|
+| **Overheating** | ![](https://static.insales-cdn.com/files/1/696/1712824/original/400-Over-Heating.jpg) | Insufficient cooling between layers | Lower temp 5°C, reduce speed, boost fan speed, set min layer time ≥10 sec |
+| **Blobs and zits** | ![](https://static.insales-cdn.com/files/1/1261/1713389/original/400-Blobs-And-Zits.jpg) | Nozzle pressure at seam start/end | Tune retraction and restart distance, enable coasting (0.2–0.5 mm), randomize seam position |
+| **Weak infill** | ![](https://static.insales-cdn.com/files/1/1258/1713386/original/400-Weak-Or-Stringy-Infill.jpg) | Infill speed too high | Reduce infill speed 50%, switch pattern to Grid or Gyroid |
+| **Gap between infill and wall** | ![](https://static.insales-cdn.com/files/1/1259/1713387/original/400-Gap-Between-Infill-And-Outline.jpg) | Low overlap percentage | Increase outline overlap from 20% to 30%, raise extrusion multiplier |
+| **Scars on top surface** | ![](https://static.insales-cdn.com/files/1/1291/1713419/original/200-Scars-On-Top-Surface.jpg) | Nozzle drags over surface during travel | Increase Z-offset, enable nozzle lift during retraction |
+| **Lines on side** | ![](https://static.insales-cdn.com/files/1/1294/1713422/original/200-Lines-On-Side-Of-Print.jpg) | Temperature fluctuations, inconsistent extrusion | Stabilize temperature with PID calibration, check consistent filament feed |
+| **Gaps in floor corners** | ![](https://static.insales-cdn.com/files/1/1292/1713420/original/200-Gaps-In-Floor-Corners.jpg) | Too few top layers, weak infill | Increase solid top layers, raise infill |
+| **Gaps in thin walls** | ![](https://static.insales-cdn.com/files/1/1298/1713426/original/200-Gaps-In-Thin-Walls.jpg) | Wall thickness below 2× nozzle diameter | Enable thin wall compensation in slicer, fix model geometry |
+
+#### Mechanical Defects
+
+| Defect | Photo | Causes | Fix |
+|--------|-------|--------|-----|
+| **Layer shifting** | ![](https://static.insales-cdn.com/files/1/697/1712825/original/400-Layer-Shifting.jpg) | Acceleration too high for steppers, loose belts, mechanical obstruction | Reduce acceleration, check belt tension, clear any obstacles in motion path |
+| **Warping** | ![](https://static.insales-cdn.com/files/1/1241/1713369/original/200-Curling-And-Warping.jpg) | Material shrinkage during cooling | Keep bed at temperature, no fan on first layers, shield from drafts |
+| **Delamination / layer splitting** | ![](https://static.insales-cdn.com/files/1/1243/1713371/original/400-Layers-Splitting-Or-Cracking.jpg) | Layers not bonding — temperature too low | Raise nozzle temp 10°C, reduce cooling, keep layer height ≤80% of nozzle diameter |
+| **Ringing / ghosting** | ![](https://static.insales-cdn.com/files/1/1295/1713423/original/200-Vibrations-And-Ringing.jpg) | Print head inertia at direction changes | Tighten belts, lower acceleration and jerk, enable **Input Shaper** in Klipper — eliminates the problem entirely |
+
+#### Material Temperature Reference (k3d.tech)
+
+| Material | Nozzle | Bed |
+|----------|--------|-----|
+| PLA | 210°C | 60°C |
+| PETG | 235°C | 75°C |
+| ABS/ASA | 280–290°C | 110°C |
+| HIPS | 270°C | 100°C |
+| PC (Polycarbonate) | 280–290°C | 120°C |
+| PA12 (Nylon) | 250°C | 100°C |
+| ABS CF/GF | 290°C | 110°C |
+
+> ⚠️ PTFE tube is limited to 250°C. For high-temperature materials, you need a full-metal hotend assembly.
 
 ---
 
