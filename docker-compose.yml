@@ -1,0 +1,50 @@
+# Obico (formerly The Spaghetti Detective) — Self-Hosted AI Print Failure Detector
+#
+# Usage:
+#   docker compose up -d
+#   Then: OctoPrint → Settings → Obico → Server: http://<this-host>:3334
+#
+# Docs: https://www.obico.io/docs/server-guides/
+
+version: "3.8"
+
+services:
+  obico-web:
+    image: thespaghettidetective/web:latest
+    container_name: obico-web
+    restart: unless-stopped
+    environment:
+      - DJANGO_SECRET_KEY=change-this-to-a-random-string
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_HOST_USER=
+      - EMAIL_HOST_PASSWORD=
+      - DEFAULT_FROM_EMAIL=
+    volumes:
+      - obico_media:/app/ml_api/media
+      - obico_data:/app/data
+    ports:
+      - "3334:3334"
+    depends_on:
+      - obico-ml-api
+      - obico-redis
+
+  obico-ml-api:
+    image: thespaghettidetective/ml_api:latest
+    container_name: obico-ml-api
+    restart: unless-stopped
+    # GPU acceleration (optional, requires nvidia-docker2):
+    # runtime: nvidia
+    # environment:
+    #   - NVIDIA_VISIBLE_DEVICES=all
+
+  obico-redis:
+    image: redis:7-alpine
+    container_name: obico-redis
+    restart: unless-stopped
+    volumes:
+      - obico_redis:/data
+
+volumes:
+  obico_media:
+  obico_data:
+  obico_redis:
